@@ -26,40 +26,7 @@ public class UserController : ControllerBase
     };
 
     // GET: api/User
-    [HttpGet ("/")]
-    public string GetUser()
-    {
-        return "Hello User";
-    }
-
-    [HttpGet ("welcome")]
-    public string WelcomUser()
-    {
-        return "Hello WelcomUser";
-    }
-
-
-    [HttpPost ("add")]
-    public string AddUser()
-    {
-        return "Add User";
-    }
-
-    [HttpPut ("put")]
-    public string PutUser()
-    {
-        return "Put User";
-    }
-
-    [HttpDelete ("del")]
-    public string delUser()
-    {
-        return "del User";
-    }
-
-
-
-
+    [HttpGet]
     public ActionResult<IEnumerable<User>> GetUsers()
     {
         // IEnumerable คืออะไร
