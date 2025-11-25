@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
 using Hongsa.Rtms.Api.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Hongsa.Rtms.Api.Data;
 
-public partial class ApplicationDbContext : DbContext
+public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -19,6 +21,10 @@ public partial class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        // เรียกใช้ OnModelCreating ของคลาสแม่ IdentityDbContext
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Category>(entity =>
         {
             entity.Property(e => e.CategoryName)

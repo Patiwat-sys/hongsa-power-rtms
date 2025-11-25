@@ -4,7 +4,9 @@ using Hongsa.Rtms.Api.Models;
 using Hongsa.Rtms.Api.Data;
 
 namespace Hongsa.Rtms.Api.Controllers;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize] // กำหนดว่า API นี้ต้องมีการ Login ก่อนเข้าถึง
 [ApiController]
 [Route("api/[controller]")]
 public class ProductController : ControllerBase
