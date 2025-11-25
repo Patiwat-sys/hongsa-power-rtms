@@ -1,5 +1,16 @@
 using Scalar.AspNetCore;
+
+using Microsoft.EntityFrameworkCore;
+using Hongsa.Rtms.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Entity Framework Core MS SQL Server
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
 
 // Add services to the container.
 
@@ -26,7 +37,7 @@ if (app.Environment.IsDevelopment())
 
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
