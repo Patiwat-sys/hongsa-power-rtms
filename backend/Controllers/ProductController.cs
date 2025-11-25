@@ -6,7 +6,7 @@ using Hongsa.Rtms.Api.Data;
 namespace Hongsa.Rtms.Api.Controllers;
 using Microsoft.AspNetCore.Authorization;
 
-[Authorize] // กำหนดว่า API นี้ต้องมีการ Login ก่อนเข้าถึง
+//[Authorize] // กำหนดว่า API นี้ต้องมีการ Login ก่อนเข้าถึง
 [ApiController]
 [Route("api/[controller]")]
 public class ProductController : ControllerBase
@@ -41,6 +41,7 @@ public class ProductController : ControllerBase
 
     // ฟังก์ชันสำหรับการดึงข้อมูลสินค้าทั้งหมด
     // GET: /api/Product
+    [Authorize]
     [HttpGet]
     public ActionResult<Product> GetProducts()
     {
@@ -92,6 +93,7 @@ public class ProductController : ControllerBase
 
     // ฟังก์ชันสำหรับการเพิ่มข้อมูลสินค้า
     // POST: /api/Product
+    [Authorize(Roles = UserRolesModel.Admin)] // กำหนดว่า API นี้ต้องเป็น Admin เท่านั้นถึงจะเข้าถึงได้
     [HttpPost]
     public ActionResult<Product> CreateProduct(Product product)
     {
@@ -105,6 +107,7 @@ public class ProductController : ControllerBase
 
     // ฟังก์ชันสำหรับการแก้ไขข้อมูลสินค้า
     // PUT: /api/Product/{id}
+    [Authorize(Roles = UserRolesModel.Admin)] // กำหนดว่า API นี้ต้องเป็น Admin เท่านั้นถึงจะเข้าถึงได้
     [HttpPut("{id}")]
     public ActionResult<Product> UpdateProduct(int id, Product product)
     {
@@ -132,6 +135,7 @@ public class ProductController : ControllerBase
 
     // ฟังก์ชันสำหรับการลบข้อมูลสินค้า
     // DELETE: /api/Product/{id}
+    [Authorize(Roles = UserRolesModel.Admin)] // กำหนดว่า API นี้ต้องเป็น Admin เท่านั้นถึงจะเข้าถึงได้
     [HttpDelete("{id}")]
     public ActionResult<Product> DeleteProduct(int id)
     {
