@@ -3,7 +3,6 @@ import MainLayout from "../layouts/MainLayout"
 import AuthLayout from "../layouts/AuthLayout"
 import Home from "../pages/Home"
 import About from "../pages/About"
-import Contact from "../pages/Contact"
 import Service from "@/pages/Service"
 
 import Login from "@/pages/Login"
@@ -22,10 +21,6 @@ const router = createBrowserRouter([
             {
                 path: "about",
                 element: <About />
-            },
-            {
-                path: "contact",
-                element: <Contact />
             },
             {
                 path: "service",
