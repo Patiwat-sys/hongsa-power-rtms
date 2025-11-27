@@ -1,15 +1,14 @@
-using Scalar.AspNetCore;
-
 using Microsoft.EntityFrameworkCore;
 using Hongsa.Rtms.Api.Data;
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Hongsa.Rtms.Api.Models;
 
+using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Entity Framework Core MS SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -20,15 +19,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Adding Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-    {
-        options.Password.RequireDigit = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 6;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+{
+    // ไม่บังคับว่าต้องมีตัวเลข (0-9)
+    options.Password.RequireDigit = false;
+    // ไม่บังคับว่าต้องมีตัวพิมพ์เล็ก (a-z)
+    options.Password.RequireLowercase = false;
+    // ไม่บังคับว่าต้องมีตัวพิมพ์ใหญ่ (A-Z)
+    options.Password.RequireUppercase = false;
+    // ไม่บังคับว่าต้องมีอักขระพิเศษ (เช่น ! @ # $ %)
+    options.Password.RequireNonAlphanumeric = false;
+    // กำหนดความยาวขั้นต่ำ (เช่น ตั้งเป็น 8 ตัวอักษร)
+    options.Password.RequiredLength = 8;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 // Adding Authentication
 builder.Services.AddAuthentication(options =>
@@ -51,9 +55,19 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-
-
+// Allow CORS
+builder.Services.AddCors(options => 
+{
+ options.AddPolicy("MultipleOrigins",
+    policy =>
+    {
+        policy.WithOrigins(
+            "*" // Allow any origin
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    });
+});
 
 // Add services to the container.
 
@@ -76,15 +90,18 @@ if (app.Environment.IsDevelopment())
             .WithTheme(ScalarTheme.Laserwave) // light, dark, purple
             .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
-
-
 }
+// ปิดการใช้งาน HTTPS ชั่วคราว (ถ้าจำเป็น)
+// app.UseHttpsRedirection();
 
-//app.UseHttpsRedirection();
+// Add Authentication
+app.UseAuthentication();
 
-app.UseAuthentication(); //login
+// Add Authorization
+app.UseAuthorization();
 
-app.UseAuthorization();// สิทธิ์ User Admin
+// Enable CORS
+app.UseCors("MultipleOrigins");
 
 app.MapControllers();
 
