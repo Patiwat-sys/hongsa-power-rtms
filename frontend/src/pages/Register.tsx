@@ -1,4 +1,4 @@
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { User, Mail, Lock, IdCard, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { useEffect } from "react"
 import { useForm } from 'react-hook-form'
 import { authRegister, type RegisterData } from "@/services/apiAuth"
+import { toast } from "sonner"
 
 // สร้าง Interface สำหรับ Form โดยเฉพาะ (รวม confirmPassword)
 interface RegisterFormInputs extends RegisterData {
@@ -13,6 +14,9 @@ interface RegisterFormInputs extends RegisterData {
 }
 
 function Register() {
+
+  //เปลี่ยนหน้าเมื่อสมัครเสร็จ
+  const navigate = useNavigate()
 
   // ตั้ง title หน้า
   useEffect(() => {
@@ -23,6 +27,7 @@ function Register() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>()
 
   // ดูค่า password เพื่อใช้เทียบกับ confirm password
+  // eslint-disable-next-line react-hooks/incompatible-library
   const password = watch("password")
 
   // ฟังก์ชันเมื่อ Submit form
@@ -35,10 +40,18 @@ function Register() {
     try {
       const response = await authRegister(registerData)
       console.log("Registration successful:", response)
-      // สามารถเพิ่มการแจ้งเตือนหรือเปลี่ยนหน้าได้ที่นี่
+      toast.success("ลงทะเบียนสำเร็จ", {
+        description: "บัญชีของคุณถูกสร้างเรียบร้อยแล้ว",
+      })
+      navigate("/auth/login")
     } catch (error) {
       console.error("Registration failed:", error)
-      // สามารถเพิ่มการแจ้งเตือนข้อผิดพลาดได้ที่นี่
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage = (error as any).response?.data?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
+      
+      toast.error("ลงทะเบียนไม่สำเร็จ", {
+        description: errorMessage,
+      })
     }
   }
 
@@ -60,9 +73,9 @@ function Register() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="firstName" 
-                  {...register("firstName", { required: "กรุณากรอกชื่อของคุณ" })} 
+                  {...register("firstName", { required: "กรอกชื่อของคุณ" })} 
                   className={`pl-10 ${errors.firstName ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                  placeholder="กรุณากรอกชื่อของคุณ" />
+                  placeholder="กรอกชื่อของคุณ" />
               </div>
               {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message as string}</p>}
             </div>
@@ -72,9 +85,9 @@ function Register() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="lastName" 
-                  {...register("lastName", { required: "กรุณากรอกนามสกุลของคุณ" })} 
+                  {...register("lastName", { required: "กรอกนามสกุลของคุณ" })} 
                   className={`pl-10 ${errors.lastName ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                  placeholder="กรุณากรอกนามสกุลของคุณ" />
+                  placeholder="กรอกนามสกุลของคุณ" />
               </div>
               <p className="text-red-500 text-xs">{errors.lastName?.message as string}</p>
             </div>
@@ -84,9 +97,9 @@ function Register() {
                 <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="employeeId" 
-                  {...register("employeeId", { required: "กรุณากรอกรหัสพนักงานของคุณ" })} 
+                  {...register("employeeId", { required: "กรอกรหัสพนักงานของคุณ" })} 
                   className={`pl-10 ${errors.employeeId ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                  placeholder="กรุณากรอกรหัสพนักงานของคุณ" />
+                  placeholder="กรอกรหัสพนักงานของคุณ" />
               </div>
               {errors.employeeId && <p className="text-red-500 text-xs">{errors.employeeId.message as string}</p>}
             </div>
@@ -96,9 +109,9 @@ function Register() {
                 <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="departmentName" 
-                  {...register("departmentName", { required: "กรุณากรอกแผนกของคุณ" })} 
+                  {...register("departmentName", { required: "แผนกของคุณ" })} 
                   className={`pl-10 ${errors.departmentName ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                  placeholder="กรุณากรอกแผนกของคุณ" />
+                  placeholder="แผนกของคุณ" />
               </div>
               {errors.departmentName && <p className="text-red-500 text-xs">{errors.departmentName.message as string}</p>}
             </div>
@@ -108,7 +121,10 @@ function Register() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="username" 
-                  {...register("username", { required: "กรุณากรอกชื่อผู้ใช้งานของคุณ" })} 
+                  {...register("username", { 
+                    required: "ชื่อผู้ใช้งานของคุณ",
+                    minLength: { value: 3, message: "ความยาวอย่างน้อย 3 ตัวอักษร" }
+                  })} 
                   className={`pl-10 ${errors.username ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
                   placeholder="ตั้งชื่อผู้ใช้งานของคุณ" />
               </div>
@@ -120,32 +136,42 @@ function Register() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="email" 
-                  {...register("email", { required: "กรุณากรอกอีเมลของคุณ" })} 
+                  {...register("email", { 
+                    required: "กรอกอีเมลของคุณ",
+                    pattern: {
+                      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                      message: "รูปแบบอีเมลไม่ถูกต้อง"
+                    }
+                  })} 
                   className={`pl-10 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                  type="email" placeholder="name@company.com" />
+                  placeholder="name@company.com" />
               </div>
+              {errors.email && <p className="text-red-500 text-xs">{errors.email.message as string}</p>}
             </div>
             <div className="space-y-2">
-              <Label>รหัสผ่าน</Label>
+              <Label>รหัสผ่าน (Password)</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="password" 
-                  {...register("password", { required: "กรุณากรอกรหัสผ่านของคุณ" })} 
+                  {...register("password", { 
+                    required: "กรอกรหัสผ่านของคุณ",
+                    minLength: { value: 8, message: "ความยาวอย่างน้อย 8 ตัวอักษร" }
+                  })} 
                   className={`pl-10 ${errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
                   type="password" placeholder="••••••••" />
               </div>
               {errors.password && <p className="text-red-500 text-xs">{errors.password.message as string}</p>}
             </div>
             <div className="space-y-2">
-              <Label>ยืนยันรหัสผ่าน</Label>
+              <Label>ยืนยันรหัสผ่าน (Confirm)</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <Input 
                   id="confirmPassword" 
                   {
                       ...register("confirmPassword", { 
-                      required: "กรุณากรอกยืนยันรหัสผ่านของคุณ",
+                      required: "กรอกยืนยันรหัสผ่านของคุณ",
                       validate: value => value === password || "รหัสผ่านไม่ตรงกัน"
                     })
                   } 

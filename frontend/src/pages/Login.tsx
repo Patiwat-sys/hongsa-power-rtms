@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { useForm } from "react-hook-form"
 import { Eye, EyeOff, User, Lock, ArrowRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { authLogin, type LoginData } from "@/services/apiAuth"
+import { toast } from "sonner"
+
 
 function Login() {
 
@@ -12,10 +15,37 @@ function Login() {
     document.title = "Login | Hongsa Power RTMS";
   }, [])
 
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const navigate = useNavigate()
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginData>()
 
-  const onSubmit = (data: unknown) => {
+  const onSubmit = async (data: LoginData) => {
     console.log(data)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response: any = await authLogin(data)
+      console.log("Login successful:", response)
+      
+      // Store Auth Data
+      localStorage.setItem("token", response.token)
+      localStorage.setItem("roles", JSON.stringify(response.roles))
+      localStorage.setItem("username", data.username)
+      localStorage.setItem("firstName", response.firstName)
+      localStorage.setItem("lastName", response.lastName)
+      
+      toast.success("เข้าสู่ระบบสำเร็จ", {
+        description: "ยินดีต้อนรับกลับ",
+      })
+
+      // Redirect to Dashboard
+      navigate("/backend/dashboard")
+    } catch (error) {
+      console.error("Login failed:", error)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMessage = (error as any).response?.data?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
+      toast.error("เข้าสู่ระบบไม่สำเร็จ", {
+        description: errorMessage,
+      })
+    }
   }
 
   const [showPassword, setShowPassword] = useState(false)
@@ -30,21 +60,26 @@ function Login() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label>ชื่อผู้ใช้งาน / อีเมล</Label>
+          <Label>ชื่อผู้ใช้งาน (Username)</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <Input 
               id="username"
-              {...register("username", { required: "กรุณากรอกชื่อผู้ใช้งานหรืออีเมล" })}
+              {...register("username", { 
+                required: "กรอกชื่อผู้ใช้งาน (username)" ,
+                minLength: { 
+                  value: 3, message: "ความยาวอย่างน้อย 3 ตัวอักษร" 
+                }
+              })}
               className={`pl-10 ${errors.username ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-              placeholder="username หรือ email@example.com" 
+              placeholder="username" 
             />
           </div>
           {errors.username && <p className="text-red-500 text-xs">{errors.username.message as string}</p>}
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>รหัสผ่าน</Label>
+            <Label>รหัสผ่าน (Password)</Label>
             <Button variant="link" className="text-xs" asChild>
               <Link to="/auth/forgot-password">
                 ลืมรหัสผ่าน?
@@ -55,7 +90,10 @@ function Login() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <Input 
               id="password"
-              {...register("password", { required: "กรุณากรอกรหัสผ่าน" })}
+              {...register("password", { 
+                required: "กรอกรหัสผ่าน",
+                minLength: { value: 8, message: "ความยาวอย่างน้อย 8 ตัวอักษร" } 
+              })}
               className={`pl-10 pr-10 ${errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
               type={showPassword ? "text" : "password"} 
               placeholder="••••••••" 
