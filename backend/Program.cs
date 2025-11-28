@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Hongsa.Rtms.Api.Models;
+using Hongsa.Rtms.Api.Services;
 
 using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
@@ -74,6 +75,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Register Simulation Worker Service
+builder.Services.AddHostedService<SimulationWorker>();
 
 var app = builder.Build();
 

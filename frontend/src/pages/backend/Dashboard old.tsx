@@ -1,7 +1,6 @@
 import { Activity, Bell, Zap } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts"
-import axios from "axios"
 
 import {
   type ChartConfig,
@@ -21,131 +20,89 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-interface DashboardStats {
-  actualMW: number;
-  forecastMW: number;
-  diffPercent: number;
-  lastUpdate: string | null;
-}
-
-interface ChartDataItem {
-  time: string;
-  mw: number;
-}
-
-interface ChartResponse {
-  forecasts: ChartDataItem[];
-  actuals: ChartDataItem[];
-}
-
-interface ProcessedChartData {
-  time: string;
-  forecast: number | null;
-  actual: number | null;
-}
-
 const Dashboard = () => {
-  const [statsData, setStatsData] = useState<DashboardStats>({
-    actualMW: 0,
-    forecastMW: 0,
-    diffPercent: 0,
-    lastUpdate: null
-  });
-
-  const [chartData, setChartData] = useState<ProcessedChartData[]>([]);
+  const [data, setData] = useState(() => {
+    return Array.from({ length: 24 }, (_, i) => ({
+      time: `${i.toString().padStart(2, '0')}:00`,
+      forecast: 80 + 20 * Math.sin((i / 24) * 2 * Math.PI),
+      actual: 80 + Math.random() * 20 - 10,
+    }))
+  })
 
   useEffect(() => {
     document.title = "Dashboard | Hongsa Power RTMS"
-
-    const processChartData = (data: ChartResponse) => {
-      // Create a map for 24 hours (00:00 - 23:00)
-      const timeMap = new Map<string, ProcessedChartData>();
-  
-      // Initialize with empty slots if needed, or just build from data
-      // Let's build 00:00 to 23:00
-      for (let i = 0; i < 24; i++) {
-        const timeKey = `${i.toString().padStart(2, '0')}:00`;
-        timeMap.set(timeKey, { time: timeKey, forecast: null, actual: null });
-      }
-  
-      // Fill Forecasts (Time is "hh:mm:ss")
-      data.forecasts.forEach((item) => {
-        const timeKey = item.time.substring(0, 5); // "00:00:00" -> "00:00"
-        if (timeMap.has(timeKey)) {
-          const entry = timeMap.get(timeKey)!;
-          entry.forecast = item.mw;
-        }
-      });
-  
-      // Fill Actuals (Time is ISO DateTime)
-      data.actuals.forEach((item) => {
-        const date = new Date(item.time);
-        const timeKey = `${date.getHours().toString().padStart(2, '0')}:00`; 
-        
-        if (timeMap.has(timeKey)) {
-          const entry = timeMap.get(timeKey)!;
-          entry.actual = item.mw;
-        }
-      });
-  
-      const processed = Array.from(timeMap.values());
-      setChartData(processed);
-    };
-
-    const fetchData = async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const token = localStorage.getItem("token");
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  
-        // 1. Get Stats
-        const statsRes = await axios.get("http://localhost:5000/api/Monitor/dashboard-stats", { headers });
-        setStatsData(statsRes.data);
-  
-        // 2. Get Chart Data
-        const chartRes = await axios.get(`http://localhost:5000/api/Monitor/chart-data?date=${today}`, { headers });
-        
-        processChartData(chartRes.data);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      }
-    };
-
-    fetchData();
-
-    const interval = setInterval(() => {
-      fetchData();
-    }, 10000); // Update every 10 seconds
-
-    return () => clearInterval(interval);
   }, [])
 
-  // Stats Display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData((prevData) => {
+        const lastItem = prevData[prevData.length - 1]
+        const lastTimeHour = parseInt(lastItem.time.split(":")[0])
+        const nextTimeHour = (lastTimeHour + 1) % 24
+        const nextTime = `${nextTimeHour.toString().padStart(2, '0')}:00`
+
+        // Simulate new values based on the last one to keep it smooth
+        // Forecast stays the same (or cycles from the beginning if we want to keep the shape, 
+        // but here we just want it static for the 24h window. 
+        // However, since we are shifting time, we need to decide what the "new" forecast is.
+        // If we want a static 24h forecast that doesn't change, we shouldn't be shifting the array.
+        // But the requirement was "chart changes every 1 second".
+        // If we want "Forecast doesn't change every second", maybe we mean the forecast curve is fixed 
+        // and only actual updates?
+        
+        // Let's assume the user wants the Forecast line to be stable while Actual line updates.
+        // To achieve "Forecast doesn't change every second" in a moving window, 
+        // we usually just pick the forecast for the *next* hour from a pre-defined set.
+        // For simplicity, let's just generate a new forecast that is consistent with a pattern 
+        // or just keep the last one.
+        
+        // Let's make forecast follow a simple sine wave pattern based on time to look "static" relative to time of day
+        const hour = nextTimeHour;
+        const newForecast = 80 + 20 * Math.sin((hour / 24) * 2 * Math.PI);
+
+        let newActual = lastItem.actual + (Math.random() * 10 - 5)
+        newActual = Math.max(50, Math.min(118, newActual))
+
+        const newItem = {
+          time: nextTime,
+          forecast: newForecast,
+          actual: newActual,
+        }
+
+        // Remove first item and add new item
+        return [...prevData.slice(1), newItem]
+      })
+    }, 2000) // Update every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Mock Data
   const stats = [
     {
       label: "Actual Load",
-      value: `${statsData.actualMW.toFixed(2)} MW`,
-      change: "Real-time",
+      value: `${data[data.length - 1].actual.toFixed(1)} MW`,
+      change: "+12.0%",
       icon: Activity,
       color: "text-emerald-600",
       bg: "bg-emerald-100",
     },
     {
       label: "Forecast Load",
-      value: `${statsData.forecastMW.toFixed(2)} MW`,
-      change: "Target",
+      value: `${data[data.length - 1].forecast.toFixed(1)} MW`,
+      change: "+2.5%",
       icon: Zap,
       color: "text-blue-600",
       bg: "bg-blue-100",
     },
     {
       label: "% Difference",
-      value: `${statsData.diffPercent.toFixed(2)}%`,
-      change: statsData.diffPercent > 5 ? "Critical" : "Normal",
+      value: `${Math.abs(((data[data.length - 1].actual - data[data.length - 1].forecast) / data[data.length - 1].forecast) * 100).toFixed(1)}%`,
+      change: "Critical",
       icon: Bell,
-      color: statsData.diffPercent > 5 ? "text-red-600" : "text-slate-600",
-      bg: statsData.diffPercent > 5 ? "bg-red-100" : "bg-slate-100",
-      isAlert: statsData.diffPercent > 5,
+      color: "text-red-600",
+      bg: "bg-red-100",
+      isAlert: true,
     },
   ]
 
@@ -159,7 +116,7 @@ const Dashboard = () => {
         <div className="flex items-center space-x-2 text-sm text-slate-500">
           <span>Last updated:</span>
           <span className="font-medium text-slate-700">
-            {statsData.lastUpdate ? new Date(statsData.lastUpdate).toLocaleString() : "-"}
+            {new Date().toLocaleString()}
           </span>
         </div>
       </div>
@@ -217,7 +174,7 @@ const Dashboard = () => {
 
         <div className="h-[400px] w-full">
           <ChartContainer config={chartConfig} className="h-full w-full">
-            <ComposedChart data={chartData}>
+            <ComposedChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="time"
@@ -229,7 +186,7 @@ const Dashboard = () => {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                domain={[0, 'auto']} 
+                domain={[0, 140]}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
